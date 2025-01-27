@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="user-list">
+        <h3>Users</h3>
+        <ul>
+            {% for user in users %}
+                <li><a href="{% url 'chat_user' user.username %}">{{ user.username }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="chat-box">
+        <h3>Chat with {{ user.username }}</h3>
+        <div id="chat-messages">
+            {% for message in messages %}
+                <p><strong>{{ message.sender.username }}:</strong> {{ message.content }}</p>
+            {% endfor %}
+        </div>
+        <form id="chat-form">
+            <input type="text" id="message-input" placeholder="Type a message...">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+</div>
+<script>
+    const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chat/{{ user.username }}/');
+
+    document.querySelector('#chat-form').onsubmit = function(e) {
+        e.preventDefault();
+        const messageInput = document.querySelector('#message-input');
+        chatSocket.send(JSON.stringify({
+            'message': messageInput.value
+        }));
+        messageInput.value = '';
+    };
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const chatMessages = document.querySelector('#chat-messages');
+        chatMessages.innerHTML += `<p><strong>${data.sender}:</strong> ${data.message}</p>`;
+    };
+</script>
+{% endblock %}
